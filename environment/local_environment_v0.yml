@@ -1,0 +1,39 @@
+name: ml_v0_housing
+channels:
+  - conda-forge
+  - pytorch
+dependencies:
+  - python =3.10
+  - matplotlib
+  - seaborn
+  - pyobjc-core=8.2
+  - jupyterlab
+  - notebook
+  - pytorch
+  - pyro-ppl
+  - torchvision
+  - torchaudio
+  - python-wget
+  - pandas-datareader
+  - scikit-learn
+  - pandas-profiling =3.4
+  - py-xgboost
+  - lightgbm
+  - catboost =1.1
+  - optuna
+  - optuna-dashboard
+  - umap-learn
+  - shap
+  - black
+  - flit
+  - kaggle
+  - fire
+  - cloudpickle
+  - mlflow
+  - pytest
+  - pytest-cov
+  - loguru
+  - pip
+  - pip:
+    - sweetviz
+    - -e /Users/herman/Dropbox/ml_practice/classic_ml/housing/housing
