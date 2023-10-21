@@ -250,7 +250,7 @@ class LGBMProxy(BaseEstimator, RegressorMixin):
     def __init__(self, callbacks=None, validation=None, **params):
         self.callbacks = callbacks
         self.validation = validation
-        # catboost classifier
+        # lightgbm classifier
         self.estimator_ = lgbm.LGBMRegressor(**params)
 
     def get_params(self, deep=True):
