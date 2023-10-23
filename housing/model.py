@@ -250,7 +250,7 @@ class LGBMProxy(BaseEstimator, RegressorMixin):
     def __init__(self, callbacks=None, validation=None, **params):
         self.callbacks = callbacks
         self.validation = validation
-        # catboost classifier
+        # lightgbm classifier
         self.estimator_ = lgbm.LGBMRegressor(**params)
 
     def get_params(self, deep=True):
@@ -470,14 +470,14 @@ def _predict_test(*, estimator, test_data, **kwargs):
 
 def lgbm_fit_metrics(*, estimator, **kwargs):
     """Return fit metrics for fitted LightGBM model"""
-    clf = estimator["clf"]
-    best_ntree = clf.best_iteration_ if clf.best_iteration_ else clf.n_estimators
+    reg = estimator["regressor"]
+    best_ntree = reg.best_iteration_ if reg.best_iteration_ else reg.n_estimators
     best_idx = best_ntree - 1
 
     lgbm_evals = {
-        **{"train_" + k: v[best_idx] for k, v in clf.evals_result_["training"].items()},
+        **{"train_" + k: v[best_idx] for k, v in reg.evals_result_["training"].items()},
         **{
-            "test_" + k: v[best_idx] for k, v in clf.evals_result_["validation"].items()
+            "test_" + k: v[best_idx] for k, v in reg.evals_result_["validation"].items()
         },
         **{"best_ntree": best_ntree},
     }
