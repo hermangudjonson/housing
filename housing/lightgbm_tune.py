@@ -42,7 +42,7 @@ def n_estimators_objective(trial, X, y, n_estimators=1000):
     """objective for n_estimators sample"""
     lgbm_params = {
         "objective": "regression",
-        "n_estimators": n_estimators, # time 1k trials
+        "n_estimators": n_estimators,  # time 1k trials
         "learning_rate": 5e-3,
         "verbose": -1,
         # sampled params
@@ -57,13 +57,16 @@ def n_estimators_objective(trial, X, y, n_estimators=1000):
 
     sfold = RepeatedKFold(n_splits=5, n_repeats=2, random_state=1234)
 
-    reg_pipe = model.get_reg_pipeline(reg_strategy="lightgbm", reg_params=lgbm_params)
+    reg_pipe = model.get_reg_pipeline(
+        reg_strategy="lightgbm", reg_params=lgbm_params, as_category=True
+    )
     cv_results = model.cv_with_validation(
         reg_pipe,
         X,
         y,
         sfold,
-        callbacks=model.common_cv_callbacks() | {"lgbm_metrics": model.lgbm_fit_metrics},
+        callbacks=model.common_cv_callbacks()
+        | {"lgbm_metrics": model.lgbm_fit_metrics},
     )
     cv_results_df = _cv_results_df(cv_results)
 
@@ -94,7 +97,7 @@ def n_estimators_sample(n_trials=20, outdir=".", n_estimators=1000):
     X, y = raw_train_df, load_prep.transform_target(target_ds)
     study.optimize(
         functools.partial(n_estimators_objective, X=X, y=y, n_estimators=n_estimators),
-        n_trials=n_trials
+        n_trials=n_trials,
     )
     warnings.resetwarnings()
     return study
