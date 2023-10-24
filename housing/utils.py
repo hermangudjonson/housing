@@ -7,7 +7,7 @@ from pathlib import Path
 # define input and working directories depending on platform
 ON_KAGGLE: bool = os.environ["PWD"] == "/kaggle/working"
 INPUT_DIR = (
-    Path("/kaggle/input/housing")
+    Path("/kaggle/input/house-prices-advanced-regression-techniques")
     if ON_KAGGLE
     else Path("/Users/herman/Dropbox/ml_practice/classic_ml/housing/data/raw")
 )
