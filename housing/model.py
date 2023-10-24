@@ -282,10 +282,11 @@ class LGBMProxy(BaseEstimator, RegressorMixin):
             callbacks=self.callbacks,
         )
         return self
-    
+
     def __getattr__(self, name):
         """dispatch other methods to estimator"""
         return getattr(self.estimator_, name)
+
 
 def get_regressor(strategy="passthrough", params=None):
     params = params if params is not None else {}
@@ -303,7 +304,11 @@ def get_regressor(strategy="passthrough", params=None):
 
 
 def get_reg_pipeline(
-    reg_strategy="passthrough", reg_params=None, onehot_encode=False, include_pca=True
+    reg_strategy="passthrough",
+    reg_params=None,
+    onehot_encode=False,
+    include_pca=True,
+    as_category=False,
 ):
     reg_params = reg_params if reg_params is not None else {}
 
@@ -324,18 +329,27 @@ def get_reg_pipeline(
         verbose_feature_names_out=False,
     ).set_output(transform="pandas")
 
+    # cast features to categorical before input to regressor
+    cast_categoricals = make_column_transformer(
+        ("passthrough", _get_numeric_selector(impute_step)),
+        ("passthrough", make_column_selector(".*pca.*")),
+        remainder=FunctionTransformer(lambda X: X.astype("category")),
+        verbose_feature_names_out=False
+    ).set_output(transform="pandas")
+
     reg_pipe = Pipeline(
         [
             ("preprocess", load_prep.preprocess_pipe()),
             ("impute", impute_step),
             ("PCA", pca_step if include_pca else "passthrough"),
             ("onehot", impute_to_onehot if onehot_encode else "passthrough"),
+            ("categoricals", cast_categoricals if as_category else "passthrough"),
             ("regressor", get_regressor(strategy=reg_strategy, params=reg_params)),
         ]
     )
     # since we are passing info between steps, we override clone
     reg_pipe.__sklearn_clone__ = lambda: get_reg_pipeline(
-        reg_strategy, reg_params, onehot_encode, include_pca
+        reg_strategy, reg_params, onehot_encode, include_pca, as_category
     )
     return reg_pipe
 
