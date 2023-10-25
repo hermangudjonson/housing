@@ -42,14 +42,14 @@ def train_linear(X, y, use_cuml=True):
 def compare_device(gpu_device='gpu'):
     X, y = make_regression(n_samples=1_000_000, n_features=100, n_informative=10)
 
-    logger.info('training lightgbm cpu')
-    print(timeit.repeat(lambda x: train_lightgbm(X, y, device='cpu'), number=1))
-    logger.info('training lightgbm gpu')
-    print(timeit.repeat(lambda x: train_lightgbm(X, y, device=gpu_device), number=1))
     logger.info('training linear cpu')
     print(timeit.repeat(lambda x: train_linear(X, y, use_cuml=False), number=1))
     logger.info('training linear gpu')
     print(timeit.repeat(lambda x: train_linear(X, y, use_cuml=True), number=1))
+    logger.info('training lightgbm cpu')
+    print(timeit.repeat(lambda x: train_lightgbm(X, y, device='cpu'), number=1))
+    logger.info('training lightgbm gpu')
+    print(timeit.repeat(lambda x: train_lightgbm(X, y, device=gpu_device), number=1))
 
 
 if __name__ == "__main__":
