@@ -33,7 +33,6 @@ dependencies:
   - loguru
   - pip
   - pip:
-    - --no-binary lightgbm
-    - lightgbm==4.0.0 --config-settings="cmake.define.USE_CUDA=ON"
     - sweetviz
+    - lightgbm==4.0.0
     - /kaggle/input/housing-repo/housing-main
