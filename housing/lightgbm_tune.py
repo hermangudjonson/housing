@@ -38,13 +38,18 @@ def _cv_results_df(cv_results: dict):
     return cv_results_df
 
 
-def n_estimators_objective(trial, X, y, n_estimators=1000):
+def n_estimators_objective(trial, X, y, n_estimators=1000, device='cpu'):
     """objective for n_estimators sample"""
     lgbm_params = {
         "objective": "regression",
         "n_estimators": n_estimators,  # time 1k trials
         "learning_rate": 5e-3,
         "verbose": -1,
+        # gpu settings
+        "device": device,
+        "max_bin": 63 if device == 'gpu' else 255,
+        "gpu_platform_id": 0,
+        "gpu_device_id": 0,
         # sampled params
         "num_leaves": trial.suggest_int("num_leaves", 7, 4095),
         "min_data_in_leaf": trial.suggest_int("min_data_in_leaf", 5, 100),
@@ -76,10 +81,10 @@ def n_estimators_objective(trial, X, y, n_estimators=1000):
     return eval_test["test_l2"]
 
 
-def n_estimators_sample(n_trials=20, outdir=".", n_estimators=1000):
+def n_estimators_sample(n_trials=20, outdir=".", n_estimators=1000, device='cpu'):
     """run optuna lightgbm n_estimators samples"""
     sql_file = (
-        f'sqlite:///{str(utils.WORKING_DIR / outdir / "lgbm_n_estimators_sample.db")}'
+        f'sqlite:///{str(utils.WORKING_DIR / outdir / "lgbm_n_estimators_sample_{device}.db")}'
     )
 
     study = optuna.create_study(
@@ -96,7 +101,7 @@ def n_estimators_sample(n_trials=20, outdir=".", n_estimators=1000):
     raw_train_df, target_ds = load_prep.raw_train()
     X, y = raw_train_df, load_prep.transform_target(target_ds)
     study.optimize(
-        functools.partial(n_estimators_objective, X=X, y=y, n_estimators=n_estimators),
+        functools.partial(n_estimators_objective, X=X, y=y, n_estimators=n_estimators, device=device),
         n_trials=n_trials,
     )
     warnings.resetwarnings()
