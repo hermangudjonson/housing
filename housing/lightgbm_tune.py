@@ -84,7 +84,7 @@ def n_estimators_objective(trial, X, y, n_estimators=1000, device='cpu'):
 def n_estimators_sample(n_trials=20, outdir=".", n_estimators=1000, device='cpu'):
     """run optuna lightgbm n_estimators samples"""
     sql_file = (
-        f'sqlite:///{str(utils.WORKING_DIR / outdir / "lgbm_n_estimators_sample_{device}.db")}'
+        f'sqlite:///{str(utils.WORKING_DIR / outdir / f"lgbm_n_estimators_sample_{device}.db")}'
     )
 
     study = optuna.create_study(
