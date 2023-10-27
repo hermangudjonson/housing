@@ -172,7 +172,7 @@ def early_stopping_sweep(n_trials=20, outdir=".", device="cpu"):
     X, y = raw_train_df, load_prep.transform_target(target_ds)
     study.optimize(
         functools.partial(
-            n_estimators_objective, X=X, y=y, device=device
+            early_stopping_objective, X=X, y=y, device=device
         ),
         n_trials=n_trials,
     )
