@@ -22,6 +22,8 @@ dependencies:
   - catboost =1.1
   - optuna
   - optuna-dashboard
+  - flaml[automl]
+  - autogluon
   - umap-learn
   - shap
   - black
