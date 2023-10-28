@@ -10,18 +10,18 @@ tuning progression:
  - broad parameter sweep
 """
 
-from housing import load_prep, model, utils
-
-import numpy as np
-import pandas as pd
-from sklearn.model_selection import RepeatedKFold, KFold
-import optuna
-import cloudpickle
-import lightgbm as lgbm
-
 import functools
 import warnings
+
+import cloudpickle
 import fire
+import lightgbm as lgbm
+import numpy as np
+import optuna
+import pandas as pd
+from sklearn.model_selection import KFold, RepeatedKFold
+
+from housing import load_prep, model, utils
 
 
 def _cv_results_df(cv_results: dict):
@@ -171,10 +171,90 @@ def early_stopping_sweep(n_trials=20, outdir=".", device="cpu"):
     raw_train_df, target_ds = load_prep.raw_train()
     X, y = raw_train_df, load_prep.transform_target(target_ds)
     study.optimize(
-        functools.partial(
-            early_stopping_objective, X=X, y=y, device=device
-        ),
+        functools.partial(early_stopping_objective, X=X, y=y, device=device),
         n_trials=n_trials,
+    )
+    warnings.resetwarnings()
+    return study
+
+
+def broad_objective(trial, X, y, device="cpu"):
+    """objective for broad hpo"""
+    lgbm_params = {
+        "objective": "regression",
+        "n_estimators": 2_000,
+        "learning_rate": 5e-2,
+        "callbacks": [
+            optuna.integration.LightGBMPruningCallback(
+                trial, "l2", valid_name="validation"
+            ),
+            lgbm.early_stopping(20, first_metric_only=True)
+        ],
+        "verbose": -1,
+        # gpu settings
+        "device": device,
+        "max_bin": 63 if device == "gpu" else 255,
+        "gpu_platform_id": 0,
+        "gpu_device_id": 0,
+        # sampled params
+        "num_leaves": trial.suggest_int("num_leaves", 7, 4095),
+        "min_data_in_leaf": trial.suggest_int("min_data_in_leaf", 5, 100),
+        "lambda_l1": trial.suggest_float("lambda_l1", 1e-8, 10, log=True),
+        "lambda_l2": trial.suggest_float("lambda_l2", 1e-8, 10, log=True),
+        "feature_fraction": trial.suggest_float("feature_fraction", 0.4, 1.0),
+        "bagging_fraction": trial.suggest_float("bagging_fraction", 0.4, 1.0),
+        "bagging_freq": trial.suggest_int("bagging_freq", 1, 7),
+    }
+
+    sfold = RepeatedKFold(n_splits=5, n_repeats=2, random_state=1234)
+
+    reg_pipe = model.get_reg_pipeline(
+        reg_strategy="lightgbm", reg_params=lgbm_params, as_category=True
+    )
+    cv_results = model.cv_with_validation(
+        reg_pipe,
+        X,
+        y,
+        sfold,
+        callbacks=model.common_cv_callbacks()
+        | {"lgbm_metrics": model.lgbm_fit_metrics},
+    )
+    cv_results_df = _cv_results_df(cv_results)
+
+    eval_test = cv_results_df.mean(numeric_only=True)
+    for k, v in eval_test.items():
+        trial.set_user_attr(k, v)
+    return eval_test["test_l2"]
+
+
+def broad_hpo(n_trials=100, timeout=3600, outdir=".", device="cpu", prune=True):
+    """run optuna lightgbm broad hpo"""
+    if prune:
+        pruner = optuna.pruners.MedianPruner(
+            n_startup_trials=5, n_warmup_steps=200, interval_steps=50, n_min_trials=5
+        )
+    else:
+        pruner = optuna.pruners.NopPruner()
+
+    sql_file = f'sqlite:///{str(utils.WORKING_DIR / outdir / f"lgbm_broad_hpo_{device}.db")}'
+
+    study = optuna.create_study(
+        storage=sql_file,
+        load_if_exists=False,
+        study_name="lgbm_broad_hpo",
+        pruner=pruner,
+        direction="minimize",
+        sampler=optuna.samplers.TPESampler(),
+    )
+
+    warnings.simplefilter("ignore")  # to suppress multiple callback warning
+    # pre-load data for trials
+    raw_train_df, target_ds = load_prep.raw_train()
+    X, y = raw_train_df, load_prep.transform_target(target_ds)
+    study.optimize(
+        functools.partial(broad_objective, X=X, y=y, device=device),
+        n_trials=n_trials,
+        timeout=timeout
     )
     warnings.resetwarnings()
     return study
