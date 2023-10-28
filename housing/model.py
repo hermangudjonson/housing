@@ -5,10 +5,11 @@ Routines for housing model generation and evaluation.
 from functools import partial
 from time import time
 
+import flaml
+import lightgbm as lgbm
 import numpy as np
 import pandas as pd
 import sklearn.metrics as skm
-import lightgbm as lgbm
 from sklearn.base import BaseEstimator, RegressorMixin, clone, is_classifier
 from sklearn.compose import make_column_selector, make_column_transformer
 from sklearn.decomposition import PCA
@@ -299,6 +300,8 @@ def get_regressor(strategy="passthrough", params=None):
         return ElasticNetCV(**params)
     elif strategy == "lightgbm":
         return LGBMProxy(**params)
+    elif strategy == "flaml":
+        return flaml.AutoML(**params)
     else:
         raise ValueError(f"unimplemented strategy {strategy}")
 
