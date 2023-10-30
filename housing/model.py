@@ -302,6 +302,8 @@ def get_regressor(strategy="passthrough", params=None):
         return LGBMProxy(**params)
     elif strategy == "flaml":
         return flaml.AutoML(**params)
+    elif strategy == "custom":
+        return params['estimator']
     else:
         raise ValueError(f"unimplemented strategy {strategy}")
 
