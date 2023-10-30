@@ -5,6 +5,7 @@ Use budget-based model search on each platform.
 Compare raw training data vs minor pre-processing.
 """
 
+import fire
 import flaml
 import mlflow
 import pandas as pd
@@ -92,3 +93,7 @@ def fit_flaml(preprocess=False, time_budget=1, refit_time_budget=1, outdir=None)
         flaml_predict.to_csv("flaml_predict.csv")
 
     return flaml_reg
+
+
+if __name__ == "__main__":
+    fire.Fire()
