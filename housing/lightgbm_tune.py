@@ -16,6 +16,7 @@ import warnings
 import cloudpickle
 import fire
 import lightgbm as lgbm
+import mlflow
 import numpy as np
 import optuna
 import pandas as pd
@@ -258,6 +259,78 @@ def broad_hpo(n_trials=100, timeout=3600, outdir=".", device="cpu", prune=True):
     )
     warnings.resetwarnings()
     return study
+
+
+def _cvr_predict(cv_result, X):
+    """Average predictions from fold estimators and transform"""
+    fold_predictions = np.stack(
+        [fold_est.predict(X) for fold_est in cv_result["estimator"].values()],
+        axis=0,
+    )
+    # average prediction results
+    return load_prep.inv_transform_target(fold_predictions.mean(axis=0))
+
+
+def cv_best_trial(learning_rate=5e-1, device="cpu", outdir=None):
+    """Fit across CV folds with best LightGBM hyperparameters."""
+    lgbm_params = {
+        "objective": "regression",
+        "n_estimators": 10_000,
+        "learning_rate": learning_rate, # 5e-3 for final train
+        "callbacks": [
+            lgbm.early_stopping(20, first_metric_only=True)
+        ],
+        "verbose": -1,
+        # gpu settings
+        "device": device,
+        "max_bin": 63 if device == "gpu" else 255,
+        "gpu_platform_id": 0,
+        "gpu_device_id": 0
+    }
+    # best trial params
+    trial_params = {
+        'num_leaves': 11,
+        'min_data_in_leaf': 23,
+        'lambda_l1': 0.0009622039584818298,
+        'lambda_l2': 0.007667542167871574,
+        'feature_fraction': 0.5236846664479496,
+        'bagging_fraction': 0.9658064244332824,
+        'bagging_freq': 6
+    }
+    lgbm_params = lgbm_params | trial_params
+
+    raw_train_df, target_ds = load_prep.raw_train()
+    X, y = raw_train_df, load_prep.transform_target(target_ds)
+
+    sfold = KFold(n_splits=5, shuffle=True, random_state=1234)
+
+    reg_pipe = model.get_reg_pipeline(
+        reg_strategy="lightgbm", reg_params=lgbm_params, as_category=True
+    )
+    cv_results = model.cv_with_validation(
+        reg_pipe,
+        X,
+        y,
+        sfold,
+        callbacks=model.common_cv_callbacks()
+        | {"lgbm_metrics": model.lgbm_fit_metrics},
+    )
+    cv_results_df = _cv_results_df(cv_results)
+
+    # make submission predictions
+    X_test = load_prep.raw_test()
+    lgbm_predict = pd.Series(_cvr_predict(cv_results, X_test), name="SalePrice", index=X_test.index)
+
+    if outdir is not None:
+        # pickle cv results
+        with open(utils.WORKING_DIR / outdir / "lgbm_best_cv.pkl", "wb") as f:
+            cloudpickle.dump(cv_results, f)
+        cv_results_df.to_csv(utils.WORKING_DIR / outdir / "lgbm_best_eval_test.csv")
+
+        # save submission predictions
+        lgbm_predict.to_csv("lgbm_cv_predict.csv")
+    
+    return cv_results
 
 
 if __name__ == "__main__":
