@@ -29,6 +29,7 @@ from sklearn.preprocessing import (
 from sklearn.utils.metaestimators import _safe_split
 
 from housing import load_prep
+from housing.automl import AGProxy
 
 
 def get_imputer(impute_categoricals=True):
@@ -302,6 +303,8 @@ def get_regressor(strategy="passthrough", params=None):
         return LGBMProxy(**params)
     elif strategy == "flaml":
         return flaml.AutoML(**params)
+    elif strategy == 'autogluon':
+        return AGProxy(**params)
     elif strategy == "custom":
         return params['estimator']
     else:
