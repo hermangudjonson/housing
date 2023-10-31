@@ -2,17 +2,19 @@
 Simple routine to test GPU functionality
 """
 
-import lightgbm as lgbm
-import sklearn
-from sklearn.datasets import make_regression
-import cuml
 import timeit
+
+import cuml
 import fire
+import lightgbm as lgbm
+import pandas as pd
+import sklearn
 from loguru import logger
+from sklearn.datasets import make_regression
+import umap
 
 
 def train_lightgbm(X, y, device="gpu"):
-
     lgbm_params = {
         "objective": "regression",
         "max_bin": 63,
@@ -39,17 +41,49 @@ def train_linear(X, y, use_cuml=True):
     return lin_model
 
 
-def compare_device(gpu_device='gpu'):
+def compare_device(gpu_device="gpu"):
     X, y = make_regression(n_samples=1_000_000, n_features=100, n_informative=10)
 
-    logger.info('training linear cpu')
+    logger.info("training linear cpu")
     print(timeit.repeat(lambda: train_linear(X, y, use_cuml=False), number=1))
-    logger.info('training linear gpu')
+    logger.info("training linear gpu")
     print(timeit.repeat(lambda: train_linear(X, y, use_cuml=True), number=1))
-    logger.info('training lightgbm cpu')
-    print(timeit.repeat(lambda: train_lightgbm(X, y, device='cpu'), number=1))
-    logger.info('training lightgbm gpu')
+    logger.info("training lightgbm cpu")
+    print(timeit.repeat(lambda: train_lightgbm(X, y, device="cpu"), number=1))
+    logger.info("training lightgbm gpu")
     print(timeit.repeat(lambda: train_lightgbm(X, y, device=gpu_device), number=1))
+
+
+def train_tsne(X, use_cuml=True):
+    # params should be valid for both sklearn and cuml
+    tsne_params = {
+        "n_iter": 10_000,
+        "method": "barnes_hut",
+        "init": "random",
+        "learning_rate": 200,
+    }
+    if use_cuml:
+        tsne_model = cuml.TSNE(**tsne_params)
+    else:
+        tsne_model = sklearn.manifold.TSNE(**tsne_params)
+
+    return pd.DataFrame(
+        tsne_model.fit_transform(X), index=X.index, columns=["TSNE1", "TSNE2"]
+    )
+
+
+def train_umap(X, use_cuml=True):
+    
+    if use_cuml:
+        umap_model = cuml.UMAP()
+    else:
+        umap_model = umap.UMAP()
+    
+    
+
+
+def compare_embedding():
+    pass
 
 
 if __name__ == "__main__":

@@ -167,7 +167,7 @@ def fit_autogluon(preprocess=False, time_limit=1, presets="best_quality", outdir
         )
 
         # save submission predictions
-        ag_predict.to_csv("flaml_predict.csv")
+        ag_predict.to_csv("autogluon_predict.csv")
 
     return ag_reg
 
