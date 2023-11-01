@@ -4,14 +4,17 @@ Simple routine to test GPU functionality
 
 import timeit
 
+import cloudpickle
 import cuml
 import fire
 import lightgbm as lgbm
 import pandas as pd
 import sklearn
+import umap
 from loguru import logger
 from sklearn.datasets import make_regression
-import umap
+
+from housing import load_prep, model, utils
 
 
 def train_lightgbm(X, y, device="gpu"):
@@ -73,17 +76,49 @@ def train_tsne(X, use_cuml=True):
 
 
 def train_umap(X, use_cuml=True):
-    
+    umap_params = {
+        "n_epochs": 10_000,
+        "init": "random",
+    }
     if use_cuml:
-        umap_model = cuml.UMAP()
+        umap_model = cuml.UMAP(**umap_params)
     else:
-        umap_model = umap.UMAP()
-    
-    
+        umap_model = umap.UMAP(**umap_params)
+
+    return pd.DataFrame(
+        umap_model.fit_transform(X), index=X.index, columns=["UMAP1", "UMAP2"]
+    )
 
 
-def compare_embedding():
-    pass
+def compare_embedding(outdir=None):
+    raw_train_df, target_ds = load_prep.raw_train()
+    X, y = raw_train_df, load_prep.transform_target(target_ds)
+    pca_pipe = model.get_pca_pipeline(cat_n_components=10, num_n_components=10)
+    pca_df = pca_pipe.fit_transform(X, y)
+
+    fit_time, embedding = {}, {}
+    logger.info('training tsne cpu')
+    fit_time['tsne_cpu'] = timeit.repeat(lambda: train_tsne(pca_df, use_cuml=False), number=1)
+    embedding['tsne_cpu'] = train_tsne(pca_df, use_cuml=False)
+    
+    logger.info('training tsne gpu')
+    fit_time['tsne_gpu'] = timeit.repeat(lambda: train_tsne(pca_df, use_cuml=True), number=1)
+    embedding['tsne_gpu'] = train_tsne(pca_df, use_cuml=True)
+
+    logger.info('training umap cpu')
+    fit_time['umap_cpu'] = timeit.repeat(lambda: train_umap(pca_df, use_cuml=False), number=1)
+    embedding['umap_cpu'] = train_umap(pca_df, use_cuml=False)
+    
+    logger.info('training umap gpu')
+    fit_time['umap_gpu'] = timeit.repeat(lambda: train_umap(pca_df, use_cuml=True), number=1)
+    embedding['umap_gpu'] = train_umap(pca_df, use_cuml=True)
+
+    print(fit_time)
+    if outdir is not None:
+        with open(utils.WORKING_DIR / outdir / "embedding_fit_times.pkl", "wb") as f:
+            cloudpickle.dump(fit_time, f)
+        with open(utils.WORKING_DIR / outdir / "embedding.pkl", "wb") as f:
+            cloudpickle.dump(embedding, f)
 
 
 if __name__ == "__main__":
