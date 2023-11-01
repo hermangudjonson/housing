@@ -61,10 +61,10 @@ def train_tsne(X, use_cuml=True):
     # params should be valid for both sklearn and cuml
     tsne_params = {
         "n_iter": 10_000,
-        "method": "barnes_hut",
+        "method": "fft" if use_cuml else "barnes_hut",
         "init": "random",
         "learning_rate": 200,
-        "verbose": 2
+        "verbose": 6
     }
     if use_cuml:
         tsne_model = cuml.TSNE(**tsne_params)
