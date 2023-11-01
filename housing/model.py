@@ -5,7 +5,6 @@ Routines for housing model generation and evaluation.
 from functools import partial
 from time import time
 
-import flaml
 import lightgbm as lgbm
 import numpy as np
 import pandas as pd
@@ -30,6 +29,11 @@ from sklearn.utils.metaestimators import _safe_split
 
 from housing import load_prep
 from housing.automl import AGProxy
+
+try:
+    import flaml
+except ImportError:
+    flaml = None
 
 
 def get_imputer(impute_categoricals=True):
