@@ -19,6 +19,7 @@ dependencies:
   - pandas-datareader
   - scikit-learn =1.3.1
   - cuml
+  - cuda-version <=11.4
   - pandas-profiling =3.4
   - py-xgboost =1.7.1
   - catboost =1.1.1
