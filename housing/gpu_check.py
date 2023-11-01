@@ -8,6 +8,7 @@ import cloudpickle
 import cuml
 import fire
 import lightgbm as lgbm
+import numpy as np
 import pandas as pd
 import sklearn
 import umap
@@ -74,7 +75,7 @@ def train_tsne(X, use_cuml=True):
     result = tsne_model.fit_transform(X)
     logger.info((type(result), result.shape))
     return pd.DataFrame(
-        result, index=X.index, columns=["TSNE1", "TSNE2"]
+        np.array(result), index=X.index, columns=["TSNE1", "TSNE2"]
     )
 
 
@@ -92,7 +93,7 @@ def train_umap(X, use_cuml=True):
     result = umap_model.fit_transform(X)
     logger.info((type(result), result.shape))
     return pd.DataFrame(
-        result, index=X.index, columns=["UMAP1", "UMAP2"]
+        np.array(result), index=X.index, columns=["UMAP1", "UMAP2"]
     )
 
 
