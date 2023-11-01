@@ -64,7 +64,7 @@ def train_tsne(X, use_cuml=True):
         "method": "barnes_hut",
         "init": "random",
         "learning_rate": 200,
-        "verbose": 1
+        "verbose": 2
     }
     if use_cuml:
         tsne_model = cuml.TSNE(**tsne_params)
@@ -72,8 +72,7 @@ def train_tsne(X, use_cuml=True):
         tsne_model = sklearn.manifold.TSNE(**tsne_params)
 
     result = tsne_model.fit_transform(X)
-    print(type(result))
-    print(result)
+    logger.info((type(result), result.shape))
     return pd.DataFrame(
         result, index=X.index, columns=["TSNE1", "TSNE2"]
     )
@@ -91,8 +90,7 @@ def train_umap(X, use_cuml=True):
         umap_model = umap.UMAP(**umap_params)
 
     result = umap_model.fit_transform(X)
-    print(type(result))
-    print(result)
+    logger.info((type(result), result.shape))
     return pd.DataFrame(
         result, index=X.index, columns=["UMAP1", "UMAP2"]
     )
