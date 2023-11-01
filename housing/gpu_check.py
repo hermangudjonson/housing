@@ -73,13 +73,18 @@ def train_tsne(X, use_cuml=True):
 
 
 def train_umap(X, use_cuml=True):
-    
+    umap_params = {
+        "n_epochs": 10_000,
+        "init": "random",
+    }
     if use_cuml:
-        umap_model = cuml.UMAP()
+        umap_model = cuml.UMAP(**umap_params)
     else:
-        umap_model = umap.UMAP()
-    
-    
+        umap_model = umap.UMAP(**umap_params)
+
+    return pd.DataFrame(
+        umap_model.fit_transform(X), index=X.index, columns=["UMAP1", "UMAP2"]
+    )
 
 
 def compare_embedding():
