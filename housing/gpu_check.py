@@ -64,14 +64,18 @@ def train_tsne(X, use_cuml=True):
         "method": "barnes_hut",
         "init": "random",
         "learning_rate": 200,
+        "verbose": 1
     }
     if use_cuml:
         tsne_model = cuml.TSNE(**tsne_params)
     else:
         tsne_model = sklearn.manifold.TSNE(**tsne_params)
 
+    result = tsne_model.fit_transform(X)
+    print(type(result))
+    print(result)
     return pd.DataFrame(
-        tsne_model.fit_transform(X), index=X.index, columns=["TSNE1", "TSNE2"]
+        result, index=X.index, columns=["TSNE1", "TSNE2"]
     )
 
 
@@ -79,14 +83,18 @@ def train_umap(X, use_cuml=True):
     umap_params = {
         "n_epochs": 10_000,
         "init": "random",
+        "verbose": True
     }
     if use_cuml:
         umap_model = cuml.UMAP(**umap_params)
     else:
         umap_model = umap.UMAP(**umap_params)
 
+    result = umap_model.fit_transform(X)
+    print(type(result))
+    print(result)
     return pd.DataFrame(
-        umap_model.fit_transform(X), index=X.index, columns=["UMAP1", "UMAP2"]
+        result, index=X.index, columns=["UMAP1", "UMAP2"]
     )
 
 
