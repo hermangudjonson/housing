@@ -28,12 +28,13 @@ from sklearn.preprocessing import (
 from sklearn.utils.metaestimators import _safe_split
 
 from housing import load_prep
-from housing.automl import AGProxy
 
 try:
     import flaml
+    from housing.automl import AGProxy
 except ImportError:
     flaml = None
+    AGProxy = None
 
 
 def get_imputer(impute_categoricals=True):
