@@ -65,7 +65,7 @@ def train_tsne(X, use_cuml=True):
         "method": "fft" if use_cuml else "barnes_hut",
         "init": "random",
         "learning_rate": 200,
-        "verbose": 6
+        "verbose": 6,
     }
     if use_cuml:
         tsne_model = cuml.TSNE(**tsne_params)
@@ -74,17 +74,11 @@ def train_tsne(X, use_cuml=True):
 
     result = tsne_model.fit_transform(X)
     logger.info((type(result), result.shape))
-    return pd.DataFrame(
-        np.array(result), index=X.index, columns=["TSNE1", "TSNE2"]
-    )
+    return pd.DataFrame(np.array(result), index=X.index, columns=["TSNE1", "TSNE2"])
 
 
 def train_umap(X, use_cuml=True):
-    umap_params = {
-        "n_epochs": 10_000,
-        "init": "random",
-        "verbose": True
-    }
+    umap_params = {"n_epochs": 10_000, "init": "random", "verbose": True}
     if use_cuml:
         umap_model = cuml.UMAP(**umap_params)
     else:
@@ -92,9 +86,7 @@ def train_umap(X, use_cuml=True):
 
     result = umap_model.fit_transform(X)
     logger.info((type(result), result.shape))
-    return pd.DataFrame(
-        np.array(result), index=X.index, columns=["UMAP1", "UMAP2"]
-    )
+    return pd.DataFrame(np.array(result), index=X.index, columns=["UMAP1", "UMAP2"])
 
 
 def compare_embedding(outdir=None):
@@ -104,21 +96,29 @@ def compare_embedding(outdir=None):
     pca_df = pca_pipe.fit_transform(X, y)
 
     fit_time, embedding = {}, {}
-    logger.info('training tsne cpu')
-    fit_time['tsne_cpu'] = timeit.repeat(lambda: train_tsne(pca_df, use_cuml=False), number=1)
-    embedding['tsne_cpu'] = train_tsne(pca_df, use_cuml=False)
-    
-    logger.info('training tsne gpu')
-    fit_time['tsne_gpu'] = timeit.repeat(lambda: train_tsne(pca_df, use_cuml=True), number=1)
-    embedding['tsne_gpu'] = train_tsne(pca_df, use_cuml=True)
+    logger.info("training tsne cpu")
+    fit_time["tsne_cpu"] = timeit.repeat(
+        lambda: train_tsne(pca_df, use_cuml=False), number=1
+    )
+    embedding["tsne_cpu"] = train_tsne(pca_df, use_cuml=False)
 
-    logger.info('training umap cpu')
-    fit_time['umap_cpu'] = timeit.repeat(lambda: train_umap(pca_df, use_cuml=False), number=1)
-    embedding['umap_cpu'] = train_umap(pca_df, use_cuml=False)
-    
-    logger.info('training umap gpu')
-    fit_time['umap_gpu'] = timeit.repeat(lambda: train_umap(pca_df, use_cuml=True), number=1)
-    embedding['umap_gpu'] = train_umap(pca_df, use_cuml=True)
+    logger.info("training tsne gpu")
+    fit_time["tsne_gpu"] = timeit.repeat(
+        lambda: train_tsne(pca_df, use_cuml=True), number=1
+    )
+    embedding["tsne_gpu"] = train_tsne(pca_df, use_cuml=True)
+
+    logger.info("training umap cpu")
+    fit_time["umap_cpu"] = timeit.repeat(
+        lambda: train_umap(pca_df, use_cuml=False), number=1
+    )
+    embedding["umap_cpu"] = train_umap(pca_df, use_cuml=False)
+
+    logger.info("training umap gpu")
+    fit_time["umap_gpu"] = timeit.repeat(
+        lambda: train_umap(pca_df, use_cuml=True), number=1
+    )
+    embedding["umap_gpu"] = train_umap(pca_df, use_cuml=True)
 
     print(fit_time)
     if outdir is not None:
