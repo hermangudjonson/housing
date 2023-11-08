@@ -23,7 +23,6 @@ plugins:
             docstring_style: numpy
             docstring_section_style: list
             members_order: source
-            summary: true
             show_if_no_docstring: true
             heading_level: 3
             separate_signature: true
