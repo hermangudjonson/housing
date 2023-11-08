@@ -5,6 +5,7 @@ Define optuna objective, study and runs.
 Additionally compare GPU fitting performance.
 
 tuning progression:
+
  - n_estimators run time
  - learning_rate sweep to evalute early stopping points
  - broad parameter sweep
@@ -189,7 +190,7 @@ def broad_objective(trial, X, y, device="cpu"):
             optuna.integration.LightGBMPruningCallback(
                 trial, "l2", valid_name="validation"
             ),
-            lgbm.early_stopping(20, first_metric_only=True)
+            lgbm.early_stopping(20, first_metric_only=True),
         ],
         "verbose": -1,
         # gpu settings
@@ -237,7 +238,9 @@ def broad_hpo(n_trials=100, timeout=3600, outdir=".", device="cpu", prune=True):
     else:
         pruner = optuna.pruners.NopPruner()
 
-    sql_file = f'sqlite:///{str(utils.WORKING_DIR / outdir / f"lgbm_broad_hpo_{device}.db")}'
+    sql_file = (
+        f'sqlite:///{str(utils.WORKING_DIR / outdir / f"lgbm_broad_hpo_{device}.db")}'
+    )
 
     study = optuna.create_study(
         storage=sql_file,
@@ -255,7 +258,7 @@ def broad_hpo(n_trials=100, timeout=3600, outdir=".", device="cpu", prune=True):
     study.optimize(
         functools.partial(broad_objective, X=X, y=y, device=device),
         n_trials=n_trials,
-        timeout=timeout
+        timeout=timeout,
     )
     warnings.resetwarnings()
     return study
@@ -276,26 +279,24 @@ def cv_best_trial(learning_rate=5e-1, device="cpu", outdir=None):
     lgbm_params = {
         "objective": "regression",
         "n_estimators": 10_000,
-        "learning_rate": learning_rate, # 5e-3 for final train
-        "callbacks": [
-            lgbm.early_stopping(20, first_metric_only=True)
-        ],
+        "learning_rate": learning_rate,  # 5e-3 for final train
+        "callbacks": [lgbm.early_stopping(20, first_metric_only=True)],
         "verbose": -1,
         # gpu settings
         "device": device,
         "max_bin": 63 if device == "gpu" else 255,
         "gpu_platform_id": 0,
-        "gpu_device_id": 0
+        "gpu_device_id": 0,
     }
     # best trial params
     trial_params = {
-        'num_leaves': 11,
-        'min_data_in_leaf': 23,
-        'lambda_l1': 0.0009622039584818298,
-        'lambda_l2': 0.007667542167871574,
-        'feature_fraction': 0.5236846664479496,
-        'bagging_fraction': 0.9658064244332824,
-        'bagging_freq': 6
+        "num_leaves": 11,
+        "min_data_in_leaf": 23,
+        "lambda_l1": 0.0009622039584818298,
+        "lambda_l2": 0.007667542167871574,
+        "feature_fraction": 0.5236846664479496,
+        "bagging_fraction": 0.9658064244332824,
+        "bagging_freq": 6,
     }
     lgbm_params = lgbm_params | trial_params
 
@@ -319,7 +320,9 @@ def cv_best_trial(learning_rate=5e-1, device="cpu", outdir=None):
 
     # make submission predictions
     X_test = load_prep.raw_test()
-    lgbm_predict = pd.Series(_cvr_predict(cv_results, X_test), name="SalePrice", index=X_test.index)
+    lgbm_predict = pd.Series(
+        _cvr_predict(cv_results, X_test), name="SalePrice", index=X_test.index
+    )
 
     if outdir is not None:
         # pickle cv results
@@ -329,7 +332,7 @@ def cv_best_trial(learning_rate=5e-1, device="cpu", outdir=None):
 
         # save submission predictions
         lgbm_predict.to_csv("lgbm_cv_predict.csv")
-    
+
     return cv_results
 
 

@@ -35,8 +35,13 @@ dependencies:
   - pytest-cov
   - loguru
   - pre-commit
+  - mkdocstrings-python
+  - mkdocs-gen-files
+  - mkdocs-literate-nav
+  - mkdocs-material
   - pip
   - pip:
-    - umap-learn[plot]
-    - sweetviz
-    - -e /Users/herman/Dropbox/ml_practice/classic_ml/housing/housing
+      - umap-learn[plot]
+      - sweetviz
+      - mkdocs-section-index
+      - -e /Users/herman/Dropbox/ml_practice/classic_ml/housing/housing
