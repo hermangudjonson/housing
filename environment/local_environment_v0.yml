@@ -24,7 +24,6 @@ dependencies:
   - optuna-dashboard
   - flaml[automl]
   - autogluon
-  - umap-learn
   - shap
   - black
   - flit
@@ -35,7 +34,9 @@ dependencies:
   - pytest
   - pytest-cov
   - loguru
+  - pre-commit
   - pip
   - pip:
+    - umap-learn[plot]
     - sweetviz
     - -e /Users/herman/Dropbox/ml_practice/classic_ml/housing/housing
